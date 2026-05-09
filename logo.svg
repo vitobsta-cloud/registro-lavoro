@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Sfondo -->
+  <rect width="192" height="192" fill="#ffffff"/>
+  
+  <!-- Busta da lettera azzurra -->
+  <g>
+    <!-- Corpo della busta -->
+    <rect x="40" y="55" width="112" height="75" fill="#4A9FD8" rx="4"/>
+    
+    <!-- Lembo superiore (triangolo) -->
+    <path d="M 40 55 L 96 85 L 152 55" fill="#2E7BB8" stroke="none"/>
+    
+    <!-- Linea di divisione (lembo aperto) -->
+    <line x1="40" y1="55" x2="152" y2="55" stroke="#1E5A96" stroke-width="2"/>
+    
+    <!-- Ombra interna -->
+    <path d="M 40 55 L 96 85 L 152 55 L 152 130 Q 96 110 40 130 Z" fill="#3A8BC8" opacity="0.3"/>
+  </g>
+  
+  <!-- Simbolo Euro in centro (grande e luminoso) -->
+  <text x="96" y="110" font-size="64" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif">€</text>
+  
+  <!-- Effetto luce/brillantezza sul simbolo -->
+  <circle cx="96" cy="100" r="35" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.4"/>
+</svg>
