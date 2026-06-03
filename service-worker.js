@@ -1,72 +1,54 @@
-const CACHE_NAME = 'registro-lavoro-v1';
-const urlsToCache = [
+const CACHE_NAME = 'reglav-v2';
+const ASSETS = [
   './',
   './index.html',
+  './manifest.json',
+  './logo.svg',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];
 
-// Installa il service worker e mette i file in cache
+// Installazione: pre-cacha le risorse principali
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache).catch(err => {
-        console.warn('Cache addAll error:', err);
-        // Continua anche se qualche risorsa non carica
-        return Promise.resolve();
-      });
-    })
+      return cache.addAll(ASSETS.map(url => new Request(url, { mode: 'no-cors' })));
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Attiva il service worker e pulisce i cache vecchi
+// Attivazione: rimuove cache vecchie
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Strategia: Cache first, then network
-// (prova dalla cache, se non c'è vai online)
+// Fetch: prima la cache, poi la rete (Cache First per risorse locali)
 self.addEventListener('fetch', event => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
+  const url = new URL(event.request.url);
+
+  // Per risorse esterne (CDN) usa network-first con fallback cache
+  if (!url.origin.includes(self.location.origin)) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
     return;
   }
 
+  // Per risorse locali: cache first
   event.respondWith(
-    caches.match(event.request).then(response => {
-      // Se trovato in cache, lo restituisci
-      if (response) {
-        return response;
-      }
-
-      // Altrimenti prova a fetcharla da rete
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
       return fetch(event.request).then(response => {
-        // Se è una risorsa valida, la metti in cache per la prossima volta
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response;
-        }
-
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      }).catch(() => {
-        // Se non c'è connessione e non è in cache, torna offline
-        // Puoi restituire una pagina offline qui se vuoi
-        return caches.match(event.request);
       });
     })
   );
