@@ -382,6 +382,11 @@ tr:hover td{background:#fafaf8;}
         <button class="btn btn-s btn-p" onclick="calcolaRiepilogo()">Calcola</button>
         <button class="btn btn-s" onclick="resetFiltriTrasf()">Reset</button>
       </div>
+      <div class="sec-lbl">Presenza</div>
+      <div id="trasfPieWrap" style="max-width:280px;margin:0 auto 16px auto;position:relative">
+        <canvas id="chartTrasfPie" height="220"></canvas>
+        <div id="trasfPieLegend" style="text-align:center;font-size:13px;margin-top:6px"></div>
+      </div>
       <div class="sec-lbl">Riepilogo Trasferte</div>
       <div id="riepilogoTrasferte"></div>
       <div class="sec-lbl">Riepilogo Spese Effettive</div>
@@ -1293,6 +1298,44 @@ function calcolaRiepilogo() {
     '<div class="res-row"><span><b>📊 Totale KM percorsi</b></span><span><b>'+totKm+' km</b></span></div>';
 
   var netto=totTrasf-totSpese;
+
+  // ── Torta Azienda vs Fuori ──
+  var giorniTot = records.filter(function(r){
+    return (r.ore_tot||0)>0 || (r.malattia||0)>0 || (r.ferie||0)>0 || (r.permessi||0)>0;
+  }).length;
+  var giornaFuori = records.filter(function(r){
+    var t = r.trasferte;
+    if(!t) return false;
+    if(typeof t==='number') return t>0;
+    return t.clientePranzo||t.clienteCena||t.nostroPranzo||t.nostroCena||t.esteroPranzo||t.esteroCena;
+  }).length;
+  var giorniAzienda = giorniTot - giornaFuori;
+  var pieWrap = document.getElementById('trasfPieWrap');
+  if(window.Chart && giorniTot > 0){
+    pieWrap.style.display='block';
+    var ctxPie = document.getElementById('chartTrasfPie').getContext('2d');
+    if(chartTrasfPieInst) chartTrasfPieInst.destroy();
+    chartTrasfPieInst = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: ['In azienda', 'Fuori sede'],
+        datasets: [{ data: [giorniAzienda, giornaFuori], backgroundColor: ['#4a90d9','#f0a500'], hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: function(ctx){ return ctx.label+': '+ctx.raw+' gg'; } } }
+        }
+      }
+    });
+    document.getElementById('trasfPieLegend').innerHTML =
+      '<span style="color:#4a90d9;font-weight:700">'+giorniAzienda+'</span> in azienda &nbsp;·&nbsp; '+
+      '<span style="color:#f0a500;font-weight:700">'+giornaFuori+'</span> fuori sede &nbsp;·&nbsp; '+
+      '<span style="color:#5f5e5a">'+giorniTot+' tot</span>';
+  } else {
+    if(pieWrap) pieWrap.style.display = giorniTot>0 ? 'block' : 'none';
+  }
   document.getElementById('totaleComplessivo').innerHTML=
     '<div class="busta-final"><div class="res-row" style="border:none"><span><b>Trasferte − Spese Effettive</b></span><span><b>'+netto.toFixed(2)+' €</b></span></div></div>';
 }
@@ -1891,6 +1934,7 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 var chartOreInst = null;
 var chartDonutInst = null;
 var chartKmInst   = null;
+var chartTrasfPieInst = null;
 
 function initGrafici() {
   // popola select mesi basandosi sui dati presenti
@@ -2056,9 +2100,27 @@ function aggiornaGrafici() {
     return t.clientePranzo||t.clienteCena||t.nostroPranzo||t.nostroCena||t.esteroPranzo||t.esteroCena;
   }).length;
   var tetto  = c.tetto_trasferte || 40;
-  var esenteTot = giorniConTrasf>0 ? Math.min(rimTot/giorniConTrasf, tetto)*giorniConTrasf : 0;
-  var tassabileTot = Math.max(0, rimTot - esenteTot);
-  var totAssOre = totMal + totFer;
+  // Calcolo esente corretto: per ogni giorno con trasferta, min(rimborso_gg, tetto)
+  var esenteTot = 0, tassabileTot = 0;
+  records.forEach(function(r){
+    var t = r.trasferte||{};
+    var hasTrasf = (typeof t==='number'&&t>0) ||
+      (t.clientePranzo||t.clienteCena||t.nostroPranzo||t.nostroCena||t.esteroPranzo||t.esteroCena);
+    if(!hasTrasf) return;
+    var rimGg = 0;
+    if(typeof t==='number'){ rimGg = t>0 ? (c.rimborso_nostro_pranzo||0) : 0; }
+    else {
+      if(t.clientePranzo) rimGg += (c.rimborso_cliente_pranzo||0);
+      if(t.clienteCena)   rimGg += (c.rimborso_cliente_cena||0);
+      if(t.nostroPranzo)  rimGg += (c.rimborso_nostro_pranzo||0);
+      if(t.nostroCena)    rimGg += (c.rimborso_nostro_cena||0);
+      if(t.esteroPranzo)  rimGg += (c.rimborso_estero_pranzo||40);
+      if(t.esteroCena)    rimGg += (c.rimborso_estero_cena||50);
+    }
+    esenteTot    += Math.min(rimGg, tetto);
+    tassabileTot += Math.max(0, rimGg - tetto);
+  });
+  var totAssOre = totMal + totFer + totPer;
   var impOrd  = totOrd  * (c.paga||0);
   var impStra = totStra * (c.paga_stra||0);
   var impAss  = totAssOre * (c.paga||0);
