@@ -696,11 +696,11 @@ tr:hover td{background:#fafaf8;}
     <div class="ph"><h2>Dati</h2></div>
     <div class="pb">
       <div class="set-row">
-        <div class="set-info"><h3>Esporta archivio</h3><p>Scarica tutti i record in JSON</p></div>
+        <div class="set-info"><h3>Esporta backup</h3><p>Scarica registri, impostazioni e PIN in un file JSON</p></div>
         <button class="btn btn-s" onclick="esporta()">📥 Esporta</button>
       </div>
       <div class="set-row">
-        <div class="set-info"><h3>Importa da file JSON</h3><p>Seleziona il file .json esportato</p></div>
+        <div class="set-info"><h3>Importa backup</h3><p>Ripristina da un file .json esportato</p></div>
         <label for="fileInput" class="btn btn-s" style="cursor:pointer;display:inline-block;">📂 Scegli file</label>
       </div>
       <input type="file" id="fileInput" accept=".json,application/json" style="display:none;" onchange="leggiFile(this)">
@@ -1855,24 +1855,58 @@ function annullaImport() {
 function importa() {
   var raw=document.getElementById('importJson').value.trim();
   if(!raw){ toast('⚠ Nessun dato da importare'); return; }
+  var parsed;
   try {
-    var items=JSON.parse(raw);
-    if(!Array.isArray(items)) throw new Error('non array');
+    parsed=JSON.parse(raw);
+  } catch(e) { toast('⚠ Errore: file JSON non valido'); return; }
+
+  // Backup COMPLETO (nuovo formato): { registri, impostazioni, pin }
+  if(parsed && !Array.isArray(parsed) && parsed.tipo === 'registro-lavoro-backup') {
+    if(!confirm('Ripristinare il backup completo?\n\nQuesto SOSTITUISCE registri e impostazioni attuali con quelli del file.')) return;
+    var registri = Array.isArray(parsed.registri) ? parsed.registri : [];
+    saveDb(registri);
+    if(parsed.impostazioni && typeof parsed.impostazioni === 'object') saveCfg(parsed.impostazioni);
+    if(parsed.pin) { localStorage.setItem('rl_pin', parsed.pin); }
+    else { localStorage.removeItem('rl_pin'); }
+    document.getElementById('importJson').value='';
+    document.getElementById('fileLabel').textContent='Nessun file selezionato';
+    document.getElementById('fileInput').value='';
+    toggleImport();
+    toast('✓ Backup ripristinato ('+registri.length+' record + impostazioni)');
+    aggiornaHome();
+    initImpostazioni();
+    return;
+  }
+
+  // Vecchio formato: lista di soli registri → aggiunge ai dati esistenti
+  if(Array.isArray(parsed)) {
     var d=db();
-    items.forEach(function(r){ d.push(r); });
+    parsed.forEach(function(r){ d.push(r); });
     saveDb(d);
     document.getElementById('importJson').value='';
     document.getElementById('fileLabel').textContent='Nessun file selezionato';
     document.getElementById('fileInput').value='';
     toggleImport();
-    toast('✓ Importati '+items.length+' record');
+    toast('✓ Importati '+parsed.length+' record');
     aggiornaHome();
     initImpostazioni();
-  } catch(e) { toast('⚠ Errore: file JSON non valido'); }
+    return;
+  }
+
+  toast('⚠ Formato file non riconosciuto');
 }
 
 function esporta() {
-  var blob=new Blob([JSON.stringify(db(),null,2)],{type:'application/json'});
+  // Backup COMPLETO: registri + impostazioni + PIN
+  var backup = {
+    tipo: 'registro-lavoro-backup',
+    versione: 1,
+    data: fmtData(new Date()),
+    registri: db(),
+    impostazioni: cfg(),
+    pin: localStorage.getItem('rl_pin') || null
+  };
+  var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='registro_lavoro_'+fmtData(new Date())+'.json';
