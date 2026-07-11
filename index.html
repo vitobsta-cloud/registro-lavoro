@@ -851,8 +851,32 @@ function aggiornaHome() {
 function toggleTrasf(id) {
   var el = document.getElementById(id);
   var chk = el.querySelector('.chk');
-  if(el.classList.contains('attiva')){ el.classList.remove('attiva'); chk.textContent='☐'; }
-  else { el.classList.add('attiva'); chk.textContent='☒'; }
+  var attivando = !el.classList.contains('attiva');
+  if(attivando){ el.classList.add('attiva'); chk.textContent='☒'; }
+  else { el.classList.remove('attiva'); chk.textContent='☐'; }
+
+  // Mezza trasferta è incompatibile con qualsiasi pasto (Cliente o Nostro): pacchetti diversi.
+  var prefix = id.indexOf('m_') === 0 ? 'm_' : '';
+  var pastiIds = [prefix+'clientePranzo', prefix+'clienteCena', prefix+'nostroPranzo', prefix+'nostroCena'];
+  var mezzaId = prefix+'mezzaTrasf';
+  if(attivando && pastiIds.indexOf(id) !== -1) {
+    // Ho appena spuntato un pasto → disattivo mezza trasferta se attiva
+    var mEl = document.getElementById(mezzaId);
+    if(mEl && mEl.classList.contains('attiva')) {
+      mEl.classList.remove('attiva');
+      mEl.querySelector('.chk').textContent = '☐';
+    }
+  }
+  if(attivando && id === mezzaId) {
+    // Ho appena spuntato mezza trasferta → disattivo tutti i pasti se attivi
+    pastiIds.forEach(function(pid){
+      var pEl = document.getElementById(pid);
+      if(pEl && pEl.classList.contains('attiva')) {
+        pEl.classList.remove('attiva');
+        pEl.querySelector('.chk').textContent = '☐';
+      }
+    });
+  }
 }
 function getTrasfData() {
   return {
