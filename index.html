@@ -71,6 +71,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#eceff1;color:#1a1a1
 .trasf-row.attiva{border-color:#1a1a18;background:#1a1a18;}
 .trasf-row.attiva .lbl{color:#fff;}
 .trasf-row.attiva .chk{color:#fff;}
+.trasf-row-pern{border-width:1.5px;padding:13px 14px;}
+.trasf-row-pern .lbl{font-size:15px;font-weight:600;}
+.trasf-row-pern .chk{font-size:20px;}
 
 /* NOTE SPESA */
 .note-spesa-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -284,7 +287,7 @@ tr:hover td{background:#fafaf8;}
           <div class="trasf-row" id="nostroCena"   onclick="toggleTrasf('nostroCena')"  ><span class="lbl">🌙 Cena</span><span class="chk">☐</span></div>
         </div>
       </div>
-      <div class="trasf-row" id="pernottamento" onclick="toggleTrasf('pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
+      <div class="trasf-row trasf-row-pern" id="pernottamento" onclick="toggleTrasf('pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
 
       <div class="trasf-title">🌍 Trasferta Estero</div>
       <div class="trasf-grid">
@@ -586,7 +589,7 @@ tr:hover td{background:#fafaf8;}
           <div class="trasf-row" id="m_nostroCena"   onclick="toggleTrasf('m_nostroCena')"  ><span class="lbl">🌙 Cena</span><span class="chk">☐</span></div>
         </div>
       </div>
-      <div class="trasf-row" id="m_pernottamento" onclick="toggleTrasf('m_pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
+      <div class="trasf-row trasf-row-pern" id="m_pernottamento" onclick="toggleTrasf('m_pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
       <div class="trasf-title">🌍 Trasferta Estero</div>
       <div class="trasf-grid">
         <div class="trasf-row" id="m_esteroPranzo" onclick="toggleTrasf('m_esteroPranzo')"><span class="lbl">🍽 Pranzo</span><span class="chk">☐</span></div>
