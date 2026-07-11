@@ -284,6 +284,7 @@ tr:hover td{background:#fafaf8;}
           <div class="trasf-row" id="nostroCena"   onclick="toggleTrasf('nostroCena')"  ><span class="lbl">🌙 Cena</span><span class="chk">☐</span></div>
         </div>
       </div>
+      <div class="trasf-row" id="pernottamento" onclick="toggleTrasf('pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
 
       <div class="trasf-title">🌍 Trasferta Estero</div>
       <div class="trasf-grid">
@@ -585,6 +586,7 @@ tr:hover td{background:#fafaf8;}
           <div class="trasf-row" id="m_nostroCena"   onclick="toggleTrasf('m_nostroCena')"  ><span class="lbl">🌙 Cena</span><span class="chk">☐</span></div>
         </div>
       </div>
+      <div class="trasf-row" id="m_pernottamento" onclick="toggleTrasf('m_pernottamento')" style="margin-top:8px"><span class="lbl">🛏 Pernottamento</span><span class="chk">☐</span></div>
       <div class="trasf-title">🌍 Trasferta Estero</div>
       <div class="trasf-grid">
         <div class="trasf-row" id="m_esteroPranzo" onclick="toggleTrasf('m_esteroPranzo')"><span class="lbl">🍽 Pranzo</span><span class="chk">☐</span></div>
@@ -669,15 +671,21 @@ tr:hover td{background:#fafaf8;}
   <div class="panel">
     <div class="ph"><h2>🇮🇹 Trasferta Italia — Carico Cliente</h2></div>
     <div class="pb">
-      <div class="set-row"><div class="set-info"><h3>Rimborso Pranzo (€)</h3></div><input type="number" id="setRimborsoClientePranzo" step="0.01" min="0"></div>
-      <div class="set-row"><div class="set-info"><h3>Rimborso Cena (€)</h3></div><input type="number" id="setRimborsoClienteCena" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Un pasto (€)</h3></div><input type="number" id="setCliente1P" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Due pasti (€)</h3></div><input type="number" id="setCliente2P" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Un pasto + pernott. (€)</h3></div><input type="number" id="setCliente1PPern" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Due pasti + pernott. (€)</h3></div><input type="number" id="setCliente2PPern" step="0.01" min="0"></div>
     </div>
   </div>
   <div class="panel">
     <div class="ph"><h2>🇮🇹 Trasferta Italia — Carico Nostro</h2></div>
     <div class="pb">
-      <div class="set-row"><div class="set-info"><h3>Rimborso Pranzo (€)</h3></div><input type="number" id="setRimborsoNostroPranzo" step="0.01" min="0"></div>
-      <div class="set-row"><div class="set-info"><h3>Rimborso Cena (€)</h3></div><input type="number" id="setRimborsoNostroCena" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>No pasto (€)</h3></div><input type="number" id="setNostro0P" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Un pasto (€)</h3></div><input type="number" id="setNostro1P" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Due pasti (€)</h3></div><input type="number" id="setNostro2P" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>No pasto + pernott. (€)</h3></div><input type="number" id="setNostro0PPern" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Un pasto + pernott. (€)</h3></div><input type="number" id="setNostro1PPern" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Due pasti + pernott. (€)</h3></div><input type="number" id="setNostro2PPern" step="0.01" min="0"></div>
     </div>
   </div>
   <div class="panel">
@@ -777,6 +785,8 @@ function cfg() {
     rimborso_cliente_pranzo:25, rimborso_cliente_cena:30,
     rimborso_nostro_pranzo:25, rimborso_nostro_cena:30,
     rimborso_estero_pranzo:40, rimborso_estero_cena:50,
+    cliente_1p:14, cliente_2p:28, cliente_1p_pern:22.5, cliente_2p_pern:36.5,
+    nostro_0p:11, nostro_1p:30, nostro_2p:70, nostro_0p_pern:19.5, nostro_1p_pern:45, nostro_2p_pern:80,
     tetto_trasferte:40, premio_produttivita:0,
     addiz_regionale:0, addiz_comunale:0 };
   try { var s = localStorage.getItem(CFG_KEY); return s ? Object.assign(def, JSON.parse(s)) : def; }
@@ -837,12 +847,13 @@ function getTrasfData() {
     nostroPranzo:        document.getElementById('nostroPranzo').classList.contains('attiva'),
     nostroCena:          document.getElementById('nostroCena').classList.contains('attiva'),
     esteroPranzo: document.getElementById('esteroPranzo').classList.contains('attiva'),
-    esteroCena:   document.getElementById('esteroCena').classList.contains('attiva')
+    esteroCena:   document.getElementById('esteroCena').classList.contains('attiva'),
+    pernottamento: document.getElementById('pernottamento') ? document.getElementById('pernottamento').classList.contains('attiva') : false
   };
 }
 function resetTrasf() {
   ['clientePranzo','clienteCena','nostroPranzo','nostroCena',
-   'esteroPranzo','esteroCena'].forEach(function(id){
+   'esteroPranzo','esteroCena','pernottamento'].forEach(function(id){
     var el = document.getElementById(id);
     if(el){ el.classList.remove('attiva'); el.querySelector('.chk').textContent='☐'; }
   });
@@ -856,7 +867,7 @@ function contaTrasf(t) {
 function labelTrasf(t) {
   if(!t) return '—';
   if(typeof t === 'number') return t > 0 ? t+' trasf.' : '—';
-  if(contaTrasf(t)===0) return '—';
+  if(contaTrasf(t)===0 && !t.pernottamento) return '—';
   var p=[];
   if(t.clientePranzo) p.push('[I]CP');
   if(t.clienteCena)   p.push('[I]CC');
@@ -864,7 +875,50 @@ function labelTrasf(t) {
   if(t.nostroCena)    p.push('[I]NC');
   if(t.esteroPranzo)  p.push('[E]P');
   if(t.esteroCena)    p.push('[E]C');
+  if(t.pernottamento) p.push('🛏');
   return p.join(' ');
+}
+// Calcola il rimborso lordo di UNA giornata di trasferta Italia, secondo il sistema a pacchetto
+// (chi paga il vitto x quanti pasti x pernottamento) invece della somma lineare pranzo+cena.
+function calcolaRimborsoGiornoItalia(t, cf) {
+  if(!t || typeof t !== 'object') return 0;
+  var pern = !!t.pernottamento;
+  var nPastiCliente = (t.clientePranzo?1:0) + (t.clienteCena?1:0);
+  var nPastiNostro   = (t.nostroPranzo?1:0)  + (t.nostroCena?1:0);
+  var tot = 0;
+  if(nPastiCliente === 1)      tot += pern ? (cf.cliente_1p_pern||0) : (cf.cliente_1p||0);
+  else if(nPastiCliente === 2) tot += pern ? (cf.cliente_2p_pern||0) : (cf.cliente_2p||0);
+  if(nPastiNostro === 1)       tot += pern ? (cf.nostro_1p_pern||0) : (cf.nostro_1p||0);
+  else if(nPastiNostro === 2)  tot += pern ? (cf.nostro_2p_pern||0) : (cf.nostro_2p||0);
+  else if(nPastiNostro === 0 && nPastiCliente === 0 && pern) tot += (cf.nostro_0p_pern||0);
+  return tot;
+}
+// Soglie di esenzione fiscale CCNL Metalmeccanica (fisse, non configurabili): 15,49€ e 44,97€.
+// Ogni pacchetto ha una soglia nota; alcuni sono interamente esenti (senza soglia).
+var SOGLIA_BASSA = 15.49, SOGLIA_ALTA = 44.97;
+function sogliaEsenzioneGiornoItalia(t) {
+  if(!t || typeof t !== 'object') return { esente: 0, soglia: null };
+  var pern = !!t.pernottamento;
+  var nPastiCliente = (t.clientePranzo?1:0) + (t.clienteCena?1:0);
+  var nPastiNostro   = (t.nostroPranzo?1:0)  + (t.nostroCena?1:0);
+  var soglia = 0; // 0 = interamente esente, nessun limite
+  if(nPastiCliente === 2) soglia = SOGLIA_BASSA;
+  if(nPastiCliente === 1 && pern) soglia = SOGLIA_BASSA;
+  if(nPastiCliente === 2 && pern) soglia = SOGLIA_BASSA;
+  if(nPastiNostro === 1 && pern) soglia = SOGLIA_BASSA;
+  if(nPastiNostro === 0 && pern && nPastiCliente === 0) soglia = SOGLIA_BASSA;
+  if(nPastiNostro === 2) soglia = SOGLIA_ALTA;
+  if(nPastiNostro === 2 && pern) soglia = SOGLIA_ALTA;
+  return soglia;
+}
+// Calcola esente/tassabile di UNA giornata: se il pacchetto non ha soglia, tutto esente.
+// Se ha soglia, esente = min(lordo, soglia), tassabile = eccedenza.
+function calcolaFiscoGiornoItalia(t, cf) {
+  var lordo = calcolaRimborsoGiornoItalia(t, cf);
+  var soglia = sogliaEsenzioneGiornoItalia(t);
+  if(soglia === 0) return { esente: lordo, tassabile: 0 };
+  var esente = Math.min(lordo, soglia);
+  return { esente: esente, tassabile: Math.max(0, lordo - esente) };
 }
 
 // ── AUTOCALC ──
@@ -1390,46 +1444,46 @@ function calcolaBusta() {
     }
   });
 
-  // ── Calcolo rimborsi trasferte con tetto fiscale ──
-  var tetto = cf.tetto_trasferte || 40; // € esenti per giorno di trasferta
-
-  // Calcola importo e tassazione per ogni giorno di trasferta
-  // Per ogni giorno con trasferta: min(importo, tetto) = esente; max(0, importo-tetto) = tassabile
-  var rimTotEsente = 0, rimTotTassabile = 0;
-
-  function calcolaFisco(n, tariffa) {
-    // n = numero di pasti, tariffa = € a pasto
-    // ogni pasto in un giorno conta separatamente? No: si calcola per giornata
-    // Qui sommiamo i rimborsi e poi applichiamo il tetto per giornata
-    return n * tariffa;
-  }
-
-  // Rimborso lordo per categoria
-  var rimCliP = cP * (cf.rimborso_cliente_pranzo||0);
-  var rimCliC = cC * (cf.rimborso_cliente_cena||0);
-  var rimNosP = nP * (cf.rimborso_nostro_pranzo||0);
-  var rimNosC = nC * (cf.rimborso_nostro_cena||0);
+  // ── Calcolo rimborsi trasferte con soglie fiscali reali (CCNL) per singola giornata ──
+  // Rimborso lordo ITALIA: calcolato per giornata con il sistema a pacchetto (pasti + pernottamento)
+  var rimItalia = 0;
+  var esenteItalia = 0, tassabileItalia = 0;
+  var giorniConTrasfItalia = 0;
+  records.forEach(function(r){
+    var t = r.trasferte;
+    if(t && typeof t === 'object') {
+      var giornoHaItalia = t.clientePranzo||t.clienteCena||t.nostroPranzo||t.nostroCena||t.pernottamento;
+      if(giornoHaItalia) {
+        var fisco = calcolaFiscoGiornoItalia(t, cf);
+        rimItalia += fisco.esente + fisco.tassabile;
+        esenteItalia += fisco.esente;
+        tassabileItalia += fisco.tassabile;
+        giorniConTrasfItalia++;
+      }
+    }
+  });
   var rimEstP = eP * (cf.rimborso_estero_pranzo||0);
   var rimEstC = eC * (cf.rimborso_estero_cena||0);
 
-  var rimCli = rimCliP + rimCliC;
-  var rimNos = rimNosP + rimNosC;
   var rimEst = rimEstP + rimEstC;
-  var totTrasf = rimCli + rimNos + rimEst;
+  var totTrasf = rimItalia + rimEst;
   var nTrasf = cP + cC + nP + nC + eP + eC;
 
-  // Numero giorni con almeno una trasferta
-  var giorniConTrasf = records.filter(function(r){
+  // Numero giorni con almeno una trasferta (Italia o estero)
+  var tetto = cf.tetto_trasferte || 40; // usato solo per la quota estero (non ancora migrata alle soglie CCNL)
+  var giorniConTrasf = giorniConTrasfItalia + records.filter(function(r){
     var t = r.trasferte;
-    if(!t) return false;
-    if(typeof t === 'number') return t > 0;
-    return t.clientePranzo||t.clienteCena||t.nostroPranzo||t.nostroCena||t.esteroPranzo||t.esteroCena;
+    if(!t || typeof t !== 'object') return false;
+    return t.esteroPranzo||t.esteroCena;
   }).length;
+  var giorniEstero = giorniConTrasf - giorniConTrasfItalia;
 
-  // Per ogni giorno con trasferta: esente fino a tetto, tassabile l'eccedenza
-  var esentePerGiorno = giorniConTrasf > 0 ? Math.min(totTrasf / giorniConTrasf, tetto) : 0;
-  var totEsente     = esentePerGiorno * giorniConTrasf;
-  var totTassabile  = Math.max(0, totTrasf - totEsente);
+  // Estero: resta sul vecchio tetto piatto finché non si mappano le soglie estero specifiche
+  var esenteEstero = giorniEstero > 0 ? Math.min(rimEst / giorniEstero, tetto) * giorniEstero : 0;
+  var tassabileEstero = Math.max(0, rimEst - esenteEstero);
+
+  var totEsente     = esenteItalia + esenteEstero;
+  var totTassabile  = tassabileItalia + tassabileEstero;
 
   // importi
   var impOrd  = totOrd      * (cf.paga      || 0);
@@ -1490,18 +1544,17 @@ function calcolaBusta() {
     (nTrasf > 0 ?
       '<div class="sec-lbl">Trasferte</div>' +
       '<div class="stats" style="margin-bottom:8px">' +
-        (cP||cC ? '<div class="stat"><div class="stat-l">Italia Cliente</div><div class="stat-v">' + (cP+cC) + '</div><div class="stat-s">' + rimCli.toFixed(2) + ' €</div></div>' : '') +
-        (nP||nC ? '<div class="stat"><div class="stat-l">Italia Nostro</div><div class="stat-v">' + (nP+nC) + '</div><div class="stat-s">' + rimNos.toFixed(2) + ' €</div></div>' : '') +
+        (giorniConTrasfItalia ? '<div class="stat"><div class="stat-l">Italia</div><div class="stat-v">' + giorniConTrasfItalia + ' gg</div><div class="stat-s">' + rimItalia.toFixed(2) + ' €</div></div>' : '') +
         (eP||eC ? '<div class="stat"><div class="stat-l">Estero</div><div class="stat-v">' + (eP+eC) + '</div><div class="stat-s">' + rimEst.toFixed(2) + ' €</div></div>' : '') +
       '</div>' +
       '<div class="res-row"><span>Totale rimborsi trasferte</span><span><b>' + totTrasf.toFixed(2) + ' €</b></span></div>' +
       '<div style="background:#eaf3de;border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;justify-content:space-between;align-items:center">' +
-        '<span style="font-size:13px;color:#3b6d11"><b>Tax 0%</b> &nbsp;Quota esente (max ' + tetto.toFixed(0) + '€/gg)</span>' +
+        '<span style="font-size:13px;color:#3b6d11"><b>Tax 0%</b> &nbsp;Quota esente (soglie CCNL)</span>' +
         '<span style="font-size:14px;font-weight:700;color:#3b6d11">' + totEsente.toFixed(2) + ' €</span>' +
       '</div>' +
       (totTassabile > 0 ?
         '<div style="background:#faeeda;border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;justify-content:space-between;align-items:center">' +
-          '<span style="font-size:13px;color:#854f0b"><b>Tassata</b> &nbsp;Eccedenza tetto (' + tetto.toFixed(0) + '€/gg)</span>' +
+          '<span style="font-size:13px;color:#854f0b"><b>Tassata</b> &nbsp;Eccedenza soglia CCNL</span>' +
           '<span style="font-size:14px;font-weight:700;color:#854f0b">' + totTassabile.toFixed(2) + ' €</span>' +
         '</div>'
       : '') +
@@ -1838,10 +1891,16 @@ function initImpostazioni() {
   document.getElementById('setIrpef').value=c.irpef;
   var arEl=document.getElementById('setAddizReg'); if(arEl) arEl.value=c.addiz_regionale||0;
   var acEl=document.getElementById('setAddizCom'); if(acEl) acEl.value=c.addiz_comunale||0;
-  document.getElementById('setRimborsoClientePranzo').value=c.rimborso_cliente_pranzo;
-  document.getElementById('setRimborsoClienteCena').value=c.rimborso_cliente_cena;
-  document.getElementById('setRimborsoNostroPranzo').value=c.rimborso_nostro_pranzo;
-  document.getElementById('setRimborsoNostroCena').value=c.rimborso_nostro_cena;
+  document.getElementById('setCliente1P').value=c.cliente_1p;
+  document.getElementById('setCliente2P').value=c.cliente_2p;
+  document.getElementById('setCliente1PPern').value=c.cliente_1p_pern;
+  document.getElementById('setCliente2PPern').value=c.cliente_2p_pern;
+  document.getElementById('setNostro0P').value=c.nostro_0p;
+  document.getElementById('setNostro1P').value=c.nostro_1p;
+  document.getElementById('setNostro2P').value=c.nostro_2p;
+  document.getElementById('setNostro0PPern').value=c.nostro_0p_pern;
+  document.getElementById('setNostro1PPern').value=c.nostro_1p_pern;
+  document.getElementById('setNostro2PPern').value=c.nostro_2p_pern;
   document.getElementById('setRimborsoEsteroPranzo').value=c.rimborso_estero_pranzo||40;
   document.getElementById('setRimborsoEsteroCena').value=c.rimborso_estero_cena||50;
   document.getElementById('infoCount').textContent='Record salvati: '+db().length;
@@ -1858,10 +1917,16 @@ function salvaImpostazioni() {
     irpef:   parseFloat(document.getElementById('setIrpef').value)||0,
     addiz_regionale: parseFloat(document.getElementById('setAddizReg').value)||0,
     addiz_comunale:  parseFloat(document.getElementById('setAddizCom').value)||0,
-    rimborso_cliente_pranzo: parseFloat(document.getElementById('setRimborsoClientePranzo').value)||0,
-    rimborso_cliente_cena:   parseFloat(document.getElementById('setRimborsoClienteCena').value)||0,
-    rimborso_nostro_pranzo:  parseFloat(document.getElementById('setRimborsoNostroPranzo').value)||0,
-    rimborso_nostro_cena:    parseFloat(document.getElementById('setRimborsoNostroCena').value)||0,
+    cliente_1p: parseFloat(document.getElementById('setCliente1P').value)||0,
+    cliente_2p: parseFloat(document.getElementById('setCliente2P').value)||0,
+    cliente_1p_pern: parseFloat(document.getElementById('setCliente1PPern').value)||0,
+    cliente_2p_pern: parseFloat(document.getElementById('setCliente2PPern').value)||0,
+    nostro_0p: parseFloat(document.getElementById('setNostro0P').value)||0,
+    nostro_1p: parseFloat(document.getElementById('setNostro1P').value)||0,
+    nostro_2p: parseFloat(document.getElementById('setNostro2P').value)||0,
+    nostro_0p_pern: parseFloat(document.getElementById('setNostro0PPern').value)||0,
+    nostro_1p_pern: parseFloat(document.getElementById('setNostro1PPern').value)||0,
+    nostro_2p_pern: parseFloat(document.getElementById('setNostro2PPern').value)||0,
     rimborso_estero_pranzo: parseFloat(document.getElementById('setRimborsoEsteroPranzo').value)||0,
     rimborso_estero_cena:   parseFloat(document.getElementById('setRimborsoEsteroCena').value)||0,
     tetto_trasferte: parseFloat(document.getElementById('setTettoTrasf').value)||40,
@@ -2555,14 +2620,14 @@ function apriModifica(idx, fromScreen) {
   document.getElementById('mPrevCalc').style.display = 'none';
 
   // trasferte
-  ['m_clientePranzo','m_clienteCena','m_nostroPranzo','m_nostroCena','m_esteroPranzo','m_esteroCena'].forEach(function(id) {
+  ['m_clientePranzo','m_clienteCena','m_nostroPranzo','m_nostroCena','m_esteroPranzo','m_esteroCena','m_pernottamento'].forEach(function(id) {
     var el = document.getElementById(id);
     if(el){ el.classList.remove('attiva'); el.querySelector('.chk').textContent = '☐'; }
   });
   var t = r.trasferte;
   if(t && typeof t === 'object') {
     var mmap = {clientePranzo:'m_clientePranzo',clienteCena:'m_clienteCena',nostroPranzo:'m_nostroPranzo',nostroCena:'m_nostroCena',
-      esteroPranzo:'m_esteroPranzo',esteroCena:'m_esteroCena'};
+      esteroPranzo:'m_esteroPranzo',esteroCena:'m_esteroCena',pernottamento:'m_pernottamento'};
     Object.keys(mmap).forEach(function(k){ if(t[k]){ var e=document.getElementById(mmap[k]); if(e){e.classList.add('attiva');e.querySelector('.chk').textContent='☒';}} });
   }
 
@@ -2592,7 +2657,8 @@ function getMTrasfData() {
     nostroPranzo:        document.getElementById('m_nostroPranzo').classList.contains('attiva'),
     nostroCena:          document.getElementById('m_nostroCena').classList.contains('attiva'),
     esteroPranzo: document.getElementById('m_esteroPranzo').classList.contains('attiva'),
-    esteroCena:   document.getElementById('m_esteroCena').classList.contains('attiva')
+    esteroCena:   document.getElementById('m_esteroCena').classList.contains('attiva'),
+    pernottamento: document.getElementById('m_pernottamento') ? document.getElementById('m_pernottamento').classList.contains('attiva') : false
   };
 }
 
