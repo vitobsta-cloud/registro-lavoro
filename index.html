@@ -129,6 +129,7 @@ tr:hover td{background:#fafaf8;}
 .bdg-m{background:#fce4d6;color:#b5441c;}
 .bdg-f{background:#d4e6f1;color:#1a5d8f;}
 .bdg-p{background:#f0e6f5;color:#6a2d8f;}
+.bdg-s{background:#fdeaea;color:#a32d2d;}
 
 /* SETTINGS */
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #f0efeb;gap:10px;}
@@ -355,7 +356,7 @@ tr:hover td{background:#fafaf8;}
       <div class="twrap">
         <table>
           <thead>
-            <tr><th>Data</th><th>Cliente</th><th>Orari</th><th>Ore</th><th>Stra</th><th>KM</th><th>Trasf</th><th>Assenze</th><th></th></tr>
+            <tr><th>Data</th><th>Cliente</th><th>Orari</th><th>Ore</th><th>Stra</th><th>KM</th><th>Trasf</th><th>Spese</th><th>Assenze</th><th></th></tr>
           </thead>
           <tbody id="tbodyLista"></tbody>
         </table>
@@ -775,7 +776,7 @@ tr:hover td{background:#fafaf8;}
 <div id="toast"></div>
 
 <script>
-var APP_VERSION = 'v19';
+var APP_VERSION = 'v20';
 var DB_KEY  = 'rl_db_v3';
 var CFG_KEY = 'rl_cfg_v3';
 var MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1334,6 +1335,7 @@ function renderLista() {
       '<td>'+((r.ore_stra||0)>0?'<span class="bdg bdg-a">+'+r.ore_stra.toFixed(1)+'h</span>':'&#8212;')+'</td>'+
       '<td>'+(r.km?r.km+' km':'&#8212;')+'</td>'+
       '<td style="font-size:12px">'+labelTrasf(r.trasferte)+'</td>'+
+      '<td>'+(((r.spesa_pranzo||0)+(r.spesa_cena||0))>0?'<span class="bdg bdg-s">'+((r.spesa_pranzo||0)+(r.spesa_cena||0)).toFixed(2)+' €</span>':'&#8212;')+'</td>'+
       '<td>'+assenze+'</td>'+
       '<td onclick="event.stopPropagation()"><button class="btn btn-s btn-d" onclick="elimina('+idx+')">&#10005;</button></td>'+
     '</tr>';
