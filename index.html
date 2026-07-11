@@ -776,7 +776,7 @@ tr:hover td{background:#fafaf8;}
 <div id="toast"></div>
 
 <script>
-var APP_VERSION = 'v20';
+var APP_VERSION = 'v21';
 var DB_KEY  = 'rl_db_v3';
 var CFG_KEY = 'rl_cfg_v3';
 var MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -856,27 +856,33 @@ function toggleTrasf(id) {
   if(attivando){ el.classList.add('attiva'); chk.textContent='☒'; }
   else { el.classList.remove('attiva'); chk.textContent='☐'; }
 
-  // Mezza trasferta è incompatibile con qualsiasi pasto (Cliente o Nostro): pacchetti diversi.
+  // Mezza trasferta (no pasto, no pernottamento) è incompatibile con qualsiasi pasto
+  // Italia (Cliente o Nostro) E con il Pernottamento: pacchetti a sé, mutuamente esclusivi.
   var prefix = id.indexOf('m_') === 0 ? 'm_' : '';
   var pastiIds = [prefix+'clientePranzo', prefix+'clienteCena', prefix+'nostroPranzo', prefix+'nostroCena'];
   var mezzaId = prefix+'mezzaTrasf';
-  if(attivando && pastiIds.indexOf(id) !== -1) {
-    // Ho appena spuntato un pasto → disattivo mezza trasferta se attiva
-    var mEl = document.getElementById(mezzaId);
-    if(mEl && mEl.classList.contains('attiva')) {
-      mEl.classList.remove('attiva');
-      mEl.querySelector('.chk').textContent = '☐';
+  var pernId  = prefix+'pernottamento';
+
+  function disattiva(elId) {
+    var e = document.getElementById(elId);
+    if(e && e.classList.contains('attiva')) {
+      e.classList.remove('attiva');
+      e.querySelector('.chk').textContent = '☐';
     }
   }
+
+  if(attivando && pastiIds.indexOf(id) !== -1) {
+    // Ho appena spuntato un pasto → disattivo mezza trasferta se attiva
+    disattiva(mezzaId);
+  }
+  if(attivando && id === pernId) {
+    // Ho appena spuntato pernottamento → disattivo mezza trasferta se attiva
+    disattiva(mezzaId);
+  }
   if(attivando && id === mezzaId) {
-    // Ho appena spuntato mezza trasferta → disattivo tutti i pasti se attivi
-    pastiIds.forEach(function(pid){
-      var pEl = document.getElementById(pid);
-      if(pEl && pEl.classList.contains('attiva')) {
-        pEl.classList.remove('attiva');
-        pEl.querySelector('.chk').textContent = '☐';
-      }
-    });
+    // Ho appena spuntato mezza trasferta → disattivo tutti i pasti e il pernottamento se attivi
+    pastiIds.forEach(disattiva);
+    disattiva(pernId);
   }
 }
 function getTrasfData() {
