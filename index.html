@@ -788,7 +788,7 @@ tr:hover td{background:#fafaf8;}
 <div id="toast"></div>
 
 <script>
-var APP_VERSION = 'v25';
+var APP_VERSION = 'v26';
 var DB_KEY  = 'rl_db_v3';
 var CFG_KEY = 'rl_cfg_v3';
 var MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -3092,6 +3092,21 @@ function rimuoviPin() {
     });
   });
 })();
+
+// Riprova l'assemblaggio quando l'app torna in foreground senza un vero reload del
+// documento (es. Android che "iberna" la WebView invece di distruggerla allo swipe-away,
+// o iOS che ripristina la pagina dalla cache di navigazione bfcache). In questi casi
+// l'evento 'load' iniziale non si ripete, ma 'pageshow' con persisted=true sì.
+window.addEventListener('pageshow', function(ev){
+  if(ev.persisted && document.getElementById('scrHome') && document.getElementById('scrHome').classList.contains('on')) {
+    assemblaHome._retried = false;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        try { assemblaHome(); } catch(e) { console.error('assembly error:', e); }
+      });
+    });
+  }
+});
 
 // ── Assemblaggio frammenti Home: solo al primo avvio, effetto "puzzle" leggero ──
 function assemblaHome() {

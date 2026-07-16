@@ -1,4 +1,4 @@
-const CACHE_NAME = 'registro-lavoro-v25';
+const CACHE_NAME = 'registro-lavoro-v26';
 const urlsToCache = [
   './',
   './index.html',
