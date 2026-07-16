@@ -788,7 +788,7 @@ tr:hover td{background:#fafaf8;}
 <div id="toast"></div>
 
 <script>
-var APP_VERSION = 'v24';
+var APP_VERSION = 'v25';
 var DB_KEY  = 'rl_db_v3';
 var CFG_KEY = 'rl_cfg_v3';
 var MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -3084,7 +3084,13 @@ function rimuoviPin() {
   setVal('bustaMese', fmtMese(new Date()));
   try { aggiornaHome(); } catch(e) { console.error('init error:', e); }
   var cvEl = document.getElementById('creditsVersione'); if(cvEl) cvEl.textContent = APP_VERSION;
-  try { assemblaHome(); } catch(e) { console.error('assembly error:', e); }
+  // Ritardo per assicurare che il layout della Home sia stabile prima di misurare le card
+  // (necessario soprattutto per PWA installate che caricano la pagina molto rapidamente da cache)
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      try { assemblaHome(); } catch(e) { console.error('assembly error:', e); }
+    });
+  });
 })();
 
 // ── Assemblaggio frammenti Home: solo al primo avvio, effetto "puzzle" leggero ──
@@ -3094,6 +3100,15 @@ function assemblaHome() {
   if(!cardsWrap) return;
   var cards = Array.prototype.slice.call(cardsWrap.querySelectorAll(':scope > .card'));
   if(!cards.length) return;
+
+  // Difesa: se il layout non è ancora stabile (card senza dimensioni reali), riprova
+  // una volta sola dopo un breve ritardo invece di procedere con frammenti invisibili.
+  var testRect = cards[0].getBoundingClientRect();
+  if((testRect.width === 0 || testRect.height === 0) && !assemblaHome._retried) {
+    assemblaHome._retried = true;
+    setTimeout(assemblaHome, 150);
+    return;
+  }
 
   var GRID_COLS = 3, GRID_ROWS = 2;
   var holders = cards.map(function(card, cardIndex) {
