@@ -788,7 +788,7 @@ tr:hover td{background:#fafaf8;}
 <div id="toast"></div>
 
 <script>
-var APP_VERSION = 'v26';
+var APP_VERSION = 'v27';
 var DB_KEY  = 'rl_db_v3';
 var CFG_KEY = 'rl_cfg_v3';
 var MESI = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -3196,6 +3196,19 @@ if ('serviceWorker' in navigator) {
     }).catch(function(error) {
       console.log('✗ Errore nella registrazione del Service Worker:', error);
     });
+  });
+
+  // Quando un nuovo service worker (nuova versione dell'app) prende il controllo,
+  // la pagina già aperta resta "agganciata" a quello vecchio finché non viene
+  // ricaricata: questo forza il reload appena il nuovo SW diventa attivo, così anche
+  // riaprendo l'app senza un vero riavvio del processo (es. dopo swipe-away su Android,
+  // dove Android spesso mantiene la WebView viva invece di distruggerla) si vede
+  // sempre l'ultima versione installata, non quella residua in cache.
+  var swReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    if (swReloading) return;
+    swReloading = true;
+    window.location.reload();
   });
 }
 </script>
