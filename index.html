@@ -193,7 +193,7 @@ tr:hover td{background:#fafaf8;}
 </head>
 <body>
 
-<div class="credits">TR/software v42</div>
+<div class="credits">TR/software v43</div>
 
 <div class="hdr">
   <button class="hdr-back" id="btnBack" onclick="goHome()">&#8592; Home</button>
@@ -257,7 +257,7 @@ tr:hover td{background:#fafaf8;}
     <div class="ph"><h2>Nuova giornata</h2></div>
     <div class="pb">
       <div class="row2">
-        <div class="fg"><label>Data</label><input type="date" id="fData"></div>
+        <div class="fg"><label>Data</label><input type="date" id="fData" onchange="autoCalc()"></div>
         <div class="fg"><label>Cliente</label><div class="ac-wrap"><input type="text" id="fCliente" placeholder="Nome cliente" oninput="onClienteInput();acFiltra('fCliente')" autocomplete="off"><div class="ac-list" id="fCliente-ac"></div></div></div>
       </div>
 
@@ -669,6 +669,7 @@ tr:hover td{background:#fafaf8;}
       <div class="set-row"><div class="set-info"><h3>Ore ordinarie fisse/mese</h3><p>Stipendio fisso CCNL (173h)</p></div><input type="number" id="setOreFisse" step="1" min="0"></div>
       <div class="set-row"><div class="set-info"><h3>Paga €/ora ordinaria</h3><p>Tariffa oraria base</p></div><input type="number" id="setPaga" step="0.01" min="0"></div>
       <div class="set-row"><div class="set-info"><h3>Paga €/ora straordinaria</h3><p>Maggiore della paga base</p></div><input type="number" id="setPagaStra" step="0.01" min="0"></div>
+      <div class="set-row"><div class="set-info"><h3>Maggiorazione sabato/festivi %</h3><p>Straordinario nei giorni non lavorativi</p></div><input type="number" id="setMaggWE" step="1" min="0"></div>
       <div class="set-row"><div class="set-info"><h3>Trattenuta INPS %</h3><p>Percentuale contributi</p></div><input type="number" id="setInps" step="0.01" min="0" max="100"></div>
       <div class="set-row"><div class="set-info"><h3>Trattenuta IRPEF %</h3><p>Percentuale imposta</p></div><input type="number" id="setIrpef" step="0.01" min="0" max="100"></div>
       <div class="set-row"><div class="set-info"><h3>Add. regionale (€)</h3><p>Rata mensile, dalla busta</p></div><input type="number" id="setAddizReg" step="0.01" min="0"></div>
@@ -774,12 +775,17 @@ tr:hover td{background:#fafaf8;}
       <div onclick="toggleChangelog()" style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;">
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:15px;">📋</span>
-          <div><h3 style="font-size:15px;font-weight:600;color:#1a1a18;">Versione attuale: v42</h3><p style="font-size:12px;color:#aaa;margin-top:2px;">Tocca per vedere tutte le versioni</p></div>
+          <div><h3 style="font-size:15px;font-weight:600;color:#1a1a18;">Versione attuale: v43</h3><p style="font-size:12px;color:#aaa;margin-top:2px;">Tocca per vedere tutte le versioni</p></div>
         </div>
         <span id="changelogArrow" style="font-size:13px;color:#aaa;transition:transform .2s;">▶</span>
       </div>
       <div id="changelogBody" style="display:none;padding:0 18px 16px;font-size:13px;color:#5f5e5a;line-height:1.8;border-top:1px solid #eee;">
         <div style="margin:14px 0;">
+          <strong style="color:#1a1a18;">v43</strong> <span style="color:#aaa;">— Nov 2026</span>
+          <p>• Sabato, domenica e festivi: tutte le ore diventano straordinario</p>
+          <p>• Maggiorazione sabato/festivi configurabile (default 50%)</p>
+        </div>
+        <div style="margin-bottom:14px;">
           <strong style="color:#1a1a18;">v42</strong> <span style="color:#aaa;">— Nov 2026</span>
           <p>• Stipendio fisso 173h/mese (ferie, permessi e malattia già compresi)</p>
           <p>• Festività cadute di domenica e 4 novembre pagate a parte (6,65h)</p>
@@ -1101,10 +1107,11 @@ function onClienteInput() {
   // se il cliente è appena stato scritto (primo carattere) e le ore sono vuote → metti default
   if(cl.length >= 1 && !ord && !stra) {
     var std = cfg().ore_std;
-    document.getElementById('fOrd').value = std.toFixed(1);
-    document.getElementById('fStra').value = '0.0';
+    var weDef = giornoNonLavorativo(document.getElementById('fData').value);
+    document.getElementById('fOrd').value = weDef ? '0.0' : std.toFixed(1);
+    document.getElementById('fStra').value = weDef ? std.toFixed(1) : '0.0';
     document.getElementById('prevCalc').style.display = 'block';
-    document.getElementById('prevCalc').textContent = 'Ore impostate di default: ' + std.toFixed(1) + 'h ordinarie';
+    document.getElementById('prevCalc').textContent = 'Ore impostate di default: ' + std.toFixed(1) + (weDef ? 'h straordinarie (sabato/festivo)' : 'h ordinarie');
   }
   // se cancella il nome → azzera le ore di default (solo se non ci sono orari inseriti)
   if(cl.length === 0) {
@@ -1262,10 +1269,12 @@ function autoCalc() {
   var prev=document.getElementById('prevCalc');
   if(tot>0){
     var std=cfg().ore_std, ord=Math.min(tot,std), stra=Math.max(0,tot-std);
+    var nonLav = giornoNonLavorativo(document.getElementById('fData').value);
+    if(nonLav){ ord=0; stra=tot; }
     document.getElementById('fOrd').value=ord.toFixed(1);
     document.getElementById('fStra').value=stra.toFixed(1);
     prev.style.display='block';
-    prev.textContent='Totale: '+tot.toFixed(1)+'h → Ordinarie: '+ord.toFixed(1)+'h   Straordinarie: '+stra.toFixed(1)+'h';
+    prev.textContent=(nonLav?'Sabato/festivo — ':'')+'Totale: '+tot.toFixed(1)+'h → Ordinarie: '+ord.toFixed(1)+'h   Straordinarie: '+stra.toFixed(1)+'h';
   } else { prev.style.display='none'; }
 }
 
@@ -1662,6 +1671,15 @@ function isFestivitaNazionale(ds) {
   var p = pasquaData(y), pl = new Date(p); pl.setDate(p.getDate()+1);
   return ds === fmtData(p) || ds === fmtData(pl);
 }
+// Sabato, domenica o festività nazionale → tutte le ore sono straordinario festivo
+function giornoNonLavorativo(ds) {
+  if(!ds) return false;
+  var p = ds.split('-'), dow = new Date(+p[0], +p[1]-1, +p[2]).getDay();
+  return dow === 0 || dow === 6 || isFestivitaNazionale(ds);
+}
+function pagaStraWeekend(cf) {
+  return (cf.paga || 0) * (1 + (cf.magg_stra_weekend != null ? cf.magg_stra_weekend : 50) / 100);
+}
 // Giorni lavorativi del mese (lun-ven, escluse festività nazionali)
 function giorniLavorativiBusta(meseStr) {
   var p = meseStr.split('-'), y = parseInt(p[0]), m = parseInt(p[1])-1, out = [];
@@ -1691,12 +1709,16 @@ function giornoInserito(r) {
   return (r.ore_tot||0)>0||(r.malattia||0)>0||(r.ferie||0)>0||(r.permessi||0)>0||(r.festivita||0)>0;
 }
 function motoreBusta(records, cf, meseStr) {
-  var r = { oreOrdReg:0, oreStra:0, oreFerie:0, oreMal:0, orePerm:0, spese:0,
+  var r = { oreOrdReg:0, oreStra:0, oreStraWE:0, oreFerie:0, oreMal:0, orePerm:0, spese:0,
             esenteItalia:0, tassItalia:0, ggItalia:0, rimEst:0, ggEst:0, nPastiEst:0, giorniLav:0 };
   records.forEach(function(x){
     if((x.ore_tot||0) > 0) r.giorniLav++;
-    r.oreOrdReg += x.ore_ord || 0;
-    r.oreStra   += x.ore_stra || 0;
+    if(giornoNonLavorativo(x.data)) {
+      r.oreStraWE += (x.ore_ord || 0) + (x.ore_stra || 0); // sabato/festivo: tutto straordinario
+    } else {
+      r.oreOrdReg += x.ore_ord || 0;
+      r.oreStra   += x.ore_stra || 0;
+    }
     r.oreFerie  += x.ferie || 0;
     r.oreMal    += x.malattia || 0;
     r.orePerm   += x.permessi || 0;
@@ -1730,8 +1752,10 @@ function motoreBusta(records, cf, meseStr) {
   r.oreFest   = r.festivita.length * r.oreFestUna;
   r.impFest   = r.oreFest * (cf.paga || 0);
   r.impStra   = r.oreStra * (cf.paga_stra || 0);
+  r.pagaStraWE = pagaStraWeekend(cf);
+  r.impStraWE = r.oreStraWE * r.pagaStraWE;
 
-  r.lordo     = r.impFisso + r.impFest + r.impStra + r.tassabile; // lordo imponibile (senza quota esente)
+  r.lordo     = r.impFisso + r.impFest + r.impStra + r.impStraWE + r.tassabile; // lordo imponibile (senza quota esente)
   r.inps      = r.lordo * ((cf.inps || 0) / 100);
   r.irpef     = (r.lordo - r.inps) * ((cf.irpef || 0) / 100);
   r.addizReg  = cf.addiz_regionale || 0;
@@ -1845,6 +1869,7 @@ function calcolaBusta() {
     '<div class="stats" style="margin-bottom:14px">' +
       '<div class="stat"><div class="stat-l">Ore ord.</div><div class="stat-v">' + m.oreOrdReg.toFixed(1) + 'h</div></div>' +
       '<div class="stat"><div class="stat-l">Straord.</div><div class="stat-v">' + m.oreStra.toFixed(1) + 'h</div><div class="stat-s">' + m.impStra.toFixed(2) + ' €</div></div>' +
+      (m.oreStraWE > 0 ? '<div class="stat"><div class="stat-l">Sab./festivi</div><div class="stat-v">' + m.oreStraWE.toFixed(1) + 'h</div><div class="stat-s">' + m.impStraWE.toFixed(2) + ' €</div></div>' : '') +
       (oreAssenze > 0 ? '<div class="stat"><div class="stat-l">Ferie/perm./mal.</div><div class="stat-v">' + oreAssenze.toFixed(1) + 'h</div><div class="stat-s">già nel fisso</div></div>' : '') +
     '</div>' +
 
@@ -1872,6 +1897,7 @@ function calcolaBusta() {
     '<div class="res-row"><span>Stipendio fisso (' + m.oreFisse + 'h × ' + paga.toFixed(2) + ' €)</span><span>' + m.impFisso.toFixed(2) + ' €</span></div>' +
     (m.festivita.length ? '<div class="res-row"><span>Festività non godute (' + m.festivita.length + ' × ' + m.oreFestUna.toFixed(2) + 'h)<br><small style="color:#888780">' + m.festivita.map(function(f){ return fmtGiornoBreve(f.data) + ' – ' + f.motivo; }).join('<br>') + '</small></span><span>' + m.impFest.toFixed(2) + ' €</span></div>' : '') +
     (m.oreStra > 0 ? '<div class="res-row"><span>Straordinari (' + m.oreStra.toFixed(1) + 'h × ' + (cf.paga_stra||0).toFixed(2) + ' €)</span><span>' + m.impStra.toFixed(2) + ' €</span></div>' : '') +
+    (m.oreStraWE > 0 ? '<div class="res-row"><span>Straord. sabato/festivi (' + m.oreStraWE.toFixed(1) + 'h × ' + m.pagaStraWE.toFixed(2) + ' €)</span><span>' + m.impStraWE.toFixed(2) + ' €</span></div>' : '') +
     (m.tassabile > 0 ? '<div class="res-row"><span>Trasferte tassate</span><span>' + m.tassabile.toFixed(2) + ' €</span></div>' : '') +
     '<div class="res-row" style="border-top:1.5px solid #e0e0e0;margin-top:6px;padding-top:10px"><span><b>Totale Lordo imponibile</b></span><span><b>' + m.lordo.toFixed(2) + ' €</b></span></div>' +
     '<div class="res-row"><span>INPS (' + (cf.inps||0) + '%)</span><span style="color:#a32d2d">− ' + m.inps.toFixed(2) + ' €</span></div>' +
@@ -1920,6 +1946,7 @@ function initImpostazioni() {
   var c=cfg();
   document.getElementById('setOreStd').value=c.ore_std;
   var tEl=document.getElementById('setTettoTrasf'); if(tEl) tEl.value=c.tetto_trasferte||40;
+  var mwEl=document.getElementById('setMaggWE'); if(mwEl) mwEl.value=(c.magg_stra_weekend!=null?c.magg_stra_weekend:50);
   var ofEl=document.getElementById('setOreFisse'); if(ofEl) ofEl.value=c.ordinario_fisso_ore||173;
   document.getElementById('setPaga').value=c.paga;
   document.getElementById('setPagaStra').value=c.paga_stra;
@@ -1948,6 +1975,7 @@ function salvaImpostazioni() {
   saveCfg({
     ore_std: parseFloat(document.getElementById('setOreStd').value)||8,
     ordinario_fisso_ore: parseFloat(document.getElementById('setOreFisse').value)||173,
+    magg_stra_weekend: isNaN(parseFloat(document.getElementById('setMaggWE').value)) ? 50 : parseFloat(document.getElementById('setMaggWE').value),
     paga:    parseFloat(document.getElementById('setPaga').value)||0,
     paga_stra: parseFloat(document.getElementById('setPagaStra').value)||0,
     inps:    parseFloat(document.getElementById('setInps').value)||0,
@@ -2395,7 +2423,7 @@ function aggiornaGrafici() {
   if(isMese) {
     mG = motoreBusta(records, c, da.slice(0,7));
     impOrd = mG.impFisso; impStra = mG.impStra; lordo = mG.lordo; inps = mG.inps; irpef = mG.irpef;
-    netto = mG.netto; esenteTot = mG.esente; rimTot = mG.totTrasf; spese = mG.spese;
+    netto = mG.netto; impStra = mG.impStra + mG.impStraWE; esenteTot = mG.esente; rimTot = mG.totTrasf; spese = mG.spese;
   }
 
   // PIN check
@@ -2556,6 +2584,8 @@ function apriModifica(idx, fromScreen) {
   document.getElementById('mPomA').value      = r.pom_a   || '';
   document.getElementById('mOrd').value       = r.ore_ord  || '';
   document.getElementById('mStra').value      = r.ore_stra || '';
+  // giornata di sabato/festivo salvata con ore ordinarie → ricalcola come straordinario
+  if(giornoNonLavorativo(r.data) && (r.ore_ord||0) > 0) { document.getElementById('mOrd').value = '0.0'; document.getElementById('mStra').value = ((r.ore_ord||0)+(r.ore_stra||0)).toFixed(1); }
   document.getElementById('mSpesaPranzo').value = r.spesa_pranzo || '';
   document.getElementById('mSpesaCena').value   = r.spesa_cena   || '';
   document.getElementById('mKm').value        = r.km       || '';
@@ -2592,10 +2622,12 @@ function autoCalcMod() {
   var prev=document.getElementById('mPrevCalc');
   if(tot>0){
     var std=cfg().ore_std, ord=Math.min(tot,std), stra=Math.max(0,tot-std);
+    var nonLav = giornoNonLavorativo(document.getElementById('mData').value);
+    if(nonLav){ ord=0; stra=tot; }
     document.getElementById('mOrd').value=ord.toFixed(1);
     document.getElementById('mStra').value=stra.toFixed(1);
     prev.style.display='block';
-    prev.textContent='Totale: '+tot.toFixed(1)+'h → Ordinarie: '+ord.toFixed(1)+'h   Straordinarie: '+stra.toFixed(1)+'h';
+    prev.textContent=(nonLav?'Sabato/festivo — ':'')+'Totale: '+tot.toFixed(1)+'h → Ordinarie: '+ord.toFixed(1)+'h   Straordinarie: '+stra.toFixed(1)+'h';
   } else { prev.style.display='none'; }
 }
 
